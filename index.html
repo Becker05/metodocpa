@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método CPA — Infraestrutura de dados para e-commerce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0a1218;--deep:#0f1d27;--panel:#14262f;--line:#25414d;
+  --signal:#2fb7a4;--signal-dim:#1c6b62;--amber:#e0b25a;--ink:#e8f0f0;--mute:#7a939c;--loss:#c85a52;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--void);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1160px;margin:0 auto;padding:0 28px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);font-weight:500}
+h1,h2,h3{line-height:1.08;font-weight:600;letter-spacing:-.02em}
+.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.grid-bg{position:absolute;inset:-56px;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;opacity:.13;mask-image:radial-gradient(circle at 72% 22%,#000 0%,transparent 68%);animation:drift 40s linear infinite}
+@keyframes drift{to{transform:translate(56px,56px)}}
+.glyph{position:absolute;color:var(--signal);opacity:.06;animation:floaty linear infinite}
+@keyframes floaty{0%{transform:translateY(20px)}50%{transform:translateY(-20px)}100%{transform:translateY(20px)}}
+main{position:relative;z-index:1}
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 0 60px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;width:100%}
+.hero h1{font-size:clamp(2.4rem,5.5vw,4.4rem);max-width:15ch}
+.hero h1 .strike{position:relative;color:var(--mute)}
+.hero h1 .strike::after{content:"";position:absolute;left:-4px;right:-4px;top:52%;height:3px;background:var(--loss);transform:scaleX(0);transform-origin:left;animation:strike 1s .9s forwards cubic-bezier(.4,0,.1,1)}
+@keyframes strike{to{transform:scaleX(1)}}
+.hero h1 .keep{color:var(--signal)}
+.hero .lede{font-size:clamp(1rem,1.6vw,1.25rem);color:var(--mute);max-width:44ch;margin-top:26px}
+.tags{display:flex;gap:10px;flex-wrap:wrap;margin-top:38px}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.12em;padding:8px 14px;border:1px solid var(--line);border-radius:2px;color:var(--mute)}
+.tag b{color:var(--signal);font-weight:500}
+.dash{background:linear-gradient(160deg,var(--deep),var(--void));border:1px solid var(--line);border-radius:10px;padding:26px;box-shadow:0 30px 80px -30px rgba(0,0,0,.7)}
+.dash-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.dash-top .ttl{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;color:var(--mute)}
+.dash-top .live{display:flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--signal)}
+.dash-top .live .d{width:7px;height:7px;border-radius:50%;background:var(--signal);animation:blink 1.6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:14px}
+.kpi .lab{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:var(--mute)}
+.kpi .val{font-size:1.55rem;font-weight:700;margin-top:6px}
+.kpi .val.up{color:var(--signal)}.kpi .val.dn{color:var(--loss)}
+.kpi .sub{font-size:.66rem;color:var(--mute);margin-top:2px}
+.spark{height:70px;position:relative}
+.spark svg{width:100%;height:100%;overflow:visible}
+.spark .path-line{fill:none;stroke:var(--signal);stroke-width:2;stroke-dasharray:600;stroke-dashoffset:600;animation:draw 2s .6s forwards ease-out}
+.spark .path-area{fill:url(#gsig);opacity:0;animation:fadein 1s 1.6s forwards}
+.spark .path-line2{fill:none;stroke:var(--mute);stroke-width:1.6;stroke-dasharray:600;stroke-dashoffset:600;animation:draw 2s .9s forwards ease-out}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fadein{to{opacity:.5}}
+.spark .legend{position:absolute;bottom:-6px;right:0;font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--mute);display:flex;gap:14px}
+.spark .legend i{width:16px;height:2px;display:inline-block;vertical-align:middle;margin-right:4px}
+section{padding:104px 0;position:relative}
+.shead{max-width:54ch;margin-bottom:56px}
+.shead h2{font-size:clamp(1.8rem,4vw,2.9rem);margin:14px 0}
+.shead p{color:var(--mute);font-size:1.05rem}
+.gap-wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center}
+.bars{background:var(--deep);border:1px solid var(--line);border-radius:10px;padding:34px}
+.bar-row{margin-bottom:26px}.bar-row:last-child{margin-bottom:0}
+.bar-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.bar-head .name{font-family:'IBM Plex Mono',monospace;font-size:.8rem;letter-spacing:.08em}
+.bar-head .name b{color:var(--ink)}.bar-head .name span{color:var(--mute)}
+.bar-head .num{font-size:1.35rem;font-weight:700}
+.bar-track{height:16px;background:var(--panel);border-radius:8px;overflow:hidden}
+.bar-fill{height:100%;width:0;border-radius:8px;transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.bar-fill.meta{background:linear-gradient(90deg,var(--signal-dim),var(--signal))}
+.bar-fill.ga4{background:linear-gradient(90deg,#6b4a1c,var(--amber))}
+.gap-note{margin-top:24px;padding-top:22px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center}
+.gap-note .big{font-size:2.4rem;font-weight:700;color:var(--loss)}
+.gap-note .txt{font-size:.85rem;color:var(--mute);max-width:20ch;text-align:right}
+.gap-copy h3{font-size:1.5rem;margin-bottom:16px}
+.gap-copy p{color:var(--mute);margin-bottom:14px}
+.gap-copy .mini{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--signal);border-left:2px solid var(--signal);padding-left:12px}
+.funnel{display:flex;flex-direction:column;gap:2px}
+.step{background:var(--deep);border:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:20px 26px;position:relative;overflow:hidden}
+.step .ico{width:44px;height:44px;flex-shrink:0;color:var(--signal)}
+.step .body{flex:1}
+.step .body .t{font-weight:600;font-size:1.05rem}
+.step .body .d{font-size:.85rem;color:var(--mute)}
+.step .meter{width:200px;flex-shrink:0;text-align:right}
+.step .meter .pct{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--signal)}
+.step .meter .track{height:6px;background:var(--panel);border-radius:3px;margin-top:6px;overflow:hidden}
+.step .meter .fill{height:100%;width:0;background:var(--signal);border-radius:3px;transition:width 1.2s ease-out}
+.step.lossy .meter .pct{color:var(--loss)}.step.lossy .meter .fill{background:var(--loss)}
+.step .flow-dot{position:absolute;left:0;top:50%;width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px 2px var(--amber);opacity:0}
+.funnel.on .flow-dot{animation:flow 3s linear infinite}
+@keyframes flow{0%{left:-10px;opacity:0}5%{opacity:1}95%{opacity:1}100%{left:100%;opacity:0}}
+.moves{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--line);border:1px solid var(--line)}
+.move{background:var(--deep);padding:36px 30px;transition:background .3s}
+.move:hover{background:var(--panel)}
+.move .ico{width:38px;height:38px;margin-bottom:20px}
+.move.c1 .ico{color:var(--signal)}.move.c2 .ico{color:var(--amber)}.move.c3 .ico{color:var(--signal)}
+.move .num{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--amber)}
+.move h3{font-size:1.4rem;margin:8px 0 12px}
+.move.c1 h3{color:var(--signal)}.move.c2 h3{color:var(--amber)}.move.c3 h3{color:var(--signal)}
+.move p{color:var(--mute);font-size:.95rem}
+.deliver{background:var(--deep);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.dcol{display:grid;grid-template-columns:190px 1fr;border-bottom:1px solid var(--line)}
+.dcol:last-child{border-bottom:none}
+.dcol .dtitle{padding:26px;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;font-size:.82rem;background:var(--panel);display:flex;align-items:center;gap:12px}
+.dcol.c1 .dtitle{color:var(--signal)}.dcol.c2 .dtitle{color:var(--amber)}.dcol.c3 .dtitle{color:var(--signal)}
+.dcol .dtitle svg{width:22px;height:22px;flex-shrink:0}
+.dlist{padding:22px 26px;display:flex;flex-wrap:wrap;gap:9px}
+.dlist span{font-size:.88rem;color:var(--ink);padding:8px 13px;border:1px solid var(--line);border-radius:3px;background:var(--void)}
+.dlist span::before{content:"\2713 ";color:var(--signal)}
+.foot-note{color:var(--mute);font-size:.78rem;margin-top:18px;font-family:'IBM Plex Mono',monospace}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--line);border:1px solid var(--line)}
+.half{background:var(--deep);padding:40px 34px}
+.half.bonus{background:var(--panel);border-left:2px solid var(--amber)}
+.half h3{font-size:1.35rem;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.half.final h3,.half.bonus h3{color:var(--amber)}
+.half h3 svg{width:26px;height:26px}
+.half ul{list-style:none}
+.half li{padding:12px 0;border-bottom:1px solid var(--line);font-size:.96rem;display:flex;gap:12px}
+.half li:last-child{border-bottom:none}
+.half li::before{content:"\2192";color:var(--signal);flex-shrink:0}
+.half.bonus li::before{color:var(--amber)}
+.invest{display:grid;grid-template-columns:.9fr 1.1fr;gap:2px;background:var(--line);border:1px solid var(--line)}
+.price{background:linear-gradient(160deg,var(--deep),var(--void));padding:52px 42px;display:flex;flex-direction:column;justify-content:center}
+.price .amt{font-size:clamp(2.4rem,5vw,3.4rem);font-weight:700;letter-spacing:-.03em}
+.price .amt small{font-size:1.3rem;color:var(--mute);font-weight:400}
+.price .terms{margin-top:22px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--mute)}
+.price .terms div{padding:6px 0;border-top:1px solid var(--line)}
+.price .terms div b{color:var(--ink);font-weight:500}
+.incl{background:var(--deep);padding:46px 42px}
+.incl h3{color:var(--signal);font-size:1.05rem;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;margin-bottom:22px}
+.incl ul{list-style:none}
+.incl li{padding:12px 0;border-bottom:1px solid var(--line);font-size:.98rem}
+.incl li:last-child{border-bottom:none}
+.incl li b{color:var(--amber);font-weight:500}
+.close{text-align:center;padding:120px 0}
+.close h2{font-size:clamp(1.8rem,4.5vw,3rem);max-width:20ch;margin:0 auto}
+.close .cta{display:inline-block;margin-top:38px;padding:18px 42px;background:var(--signal);color:var(--void);font-weight:600;font-size:1.05rem;border-radius:3px;text-decoration:none;transition:.25s}
+.close .cta:hover{background:var(--amber);transform:translateY(-2px)}
+footer{border-top:1px solid var(--line);padding:34px 0;text-align:center;color:var(--mute);font-family:'IBM Plex Mono',monospace;font-size:.76rem;letter-spacing:.06em}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s,transform .7s}
+.reveal.in{opacity:1;transform:none}
+@media(max-width:900px){
+  .hero-grid,.gap-wrap{grid-template-columns:1fr;gap:40px}
+  .moves,.split,.invest{grid-template-columns:1fr}
+  .dcol{grid-template-columns:1fr}
+  .step{flex-wrap:wrap}.step .meter{width:100%;text-align:left}
+  .kpis{grid-template-columns:1fr 1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+  .spark .path-line,.spark .path-line2{stroke-dashoffset:0!important}
+  .spark .path-area{opacity:.5!important}
+}
+</style>
+</head>
+<body>
+<div class="bg-layer">
+  <div class="grid-bg"></div>
+  <svg class="glyph" style="top:14%;left:8%;width:64px;height:64px;animation-duration:11s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+  <svg class="glyph" style="top:62%;left:80%;width:80px;height:80px;animation-duration:14s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+  <svg class="glyph" style="top:30%;left:88%;width:52px;height:52px;animation-duration:9s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 12V22H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/></svg>
+  <svg class="glyph" style="top:78%;left:12%;width:58px;height:58px;animation-duration:13s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+</div>
+<main>
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Diagnóstico · Método CPA</div>
+      <h1>O problema não é <span class="strike">só o pixel</span>. É o <span class="keep">dado</span> que sustenta a decisão.</h1>
+      <p class="lede">Quanto da jornada dos seus clientes está sendo capturada, preservada e enviada corretamente para Meta, Google e GA4?</p>
+      <div class="tags"><div class="tag"><b>01</b> MENSURAÇÃO</div><div class="tag"><b>02</b> ATRIBUIÇÃO</div><div class="tag"><b>03</b> OTIMIZAÇÃO</div></div>
+    </div>
+    <div class="dash reveal">
+      <div class="dash-top"><div class="ttl">PAINEL · ÚLTIMOS 30 DIAS</div><div class="live"><span class="d"></span>AO VIVO</div></div>
+      <div class="kpis">
+        <div class="kpi"><div class="lab">RECEITA</div><div class="val up" data-count="284" data-prefix="R$ " data-suffix="k">R$ 0k</div><div class="sub">loja</div></div>
+        <div class="kpi"><div class="lab">ATRIB. META</div><div class="val" data-count="312">0</div><div class="sub">compras</div></div>
+        <div class="kpi"><div class="lab">ATRIB. GA4</div><div class="val dn" data-count="188">0</div><div class="sub">last-click</div></div>
+      </div>
+      <div class="spark">
+        <svg viewBox="0 0 320 70" preserveAspectRatio="none">
+          <defs><linearGradient id="gsig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb7a4" stop-opacity=".55"/><stop offset="1" stop-color="#2fb7a4" stop-opacity="0"/></linearGradient></defs>
+          <path class="path-area" d="M0,50 L0,44 C40,40 60,20 100,26 C140,32 160,10 200,14 C240,18 270,6 320,10 L320,70 L0,70 Z"/>
+          <path class="path-line" d="M0,44 C40,40 60,20 100,26 C140,32 160,10 200,14 C240,18 270,6 320,10"/>
+          <path class="path-line2" d="M0,54 C40,52 60,42 100,46 C140,50 160,38 200,42 C240,46 270,40 320,44"/>
+        </svg>
+        <div class="legend"><span><i style="background:var(--signal)"></i>Meta</span><span><i style="background:var(--mute)"></i>GA4</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+<section>
+  <div class="wrap">
+    <div class="shead reveal"><div class="eyebrow">O sintoma</div><h2>Duas plataformas, dois números para a mesma venda</h2><p>Quando Meta e GA4 discordam sobre quantas compras aconteceram, alguém está decidindo verba no escuro. Números ilustrativos abaixo.</p></div>
+    <div class="gap-wrap reveal">
+      <div class="bars" id="bars">
+        <div class="bar-row"><div class="bar-head"><div class="name"><b>Meta Ads</b> <span>· compras atribuídas</span></div><div class="num" style="color:var(--signal)" data-count="312">0</div></div><div class="bar-track"><div class="bar-fill meta" style="--w:92%"></div></div></div>
+        <div class="bar-row"><div class="bar-head"><div class="name"><b>GA4</b> <span>· last-click</span></div><div class="num" style="color:var(--amber)" data-count="188">0</div></div><div class="bar-track"><div class="bar-fill ga4" style="--w:55%"></div></div></div>
+        <div class="gap-note"><div class="big" data-count="40" data-suffix="%">0%</div><div class="txt">de divergência entre as duas fontes</div></div>
+      </div>
+      <div class="gap-copy"><h3>ROAS 4.1 ou 1.9?</h3><p>O mesmo investimento parece um sucesso numa tela e um prejuízo na outra. A diferença não é opinião: é sinal que se perdeu antes de chegar na plataforma.</p><p class="mini">meta.roas = 4.1 · ga4.roas = 1.9<br>&#916; = decisão de verba em risco</p></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="shead reveal"><div class="eyebrow">Onde o dado escapa</div><h2>O sinal se perde etapa por etapa</h2><p>Cada salto da jornada é uma chance de perder informação. A conta final é a atribuição furada.</p></div>
+    <div class="funnel reveal" id="funnel">
+      <div class="step"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><div class="body"><div class="t">Visita</div><div class="d">Cliente entra na loja</div></div><div class="meter"><div class="pct">100%</div><div class="track"><div class="fill" style="--w:100%"></div></div></div></div>
+      <div class="step"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div class="body"><div class="t">Captura</div><div class="d">Interação e evento disparados</div></div><div class="meter"><div class="pct">86%</div><div class="track"><div class="fill" style="--w:86%"></div></div></div></div>
+      <div class="step lossy"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div class="body"><div class="t">Persistência</div><div class="d">Sem estrutura, o sinal quebra aqui</div></div><div class="meter"><div class="pct">61%</div><div class="track"><div class="fill" style="--w:61%"></div></div></div></div>
+      <div class="step"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><div class="body"><div class="t">Conversão</div><div class="d">Compra registrada</div></div><div class="meter"><div class="pct">58%</div><div class="track"><div class="fill" style="--w:58%"></div></div></div></div>
+      <div class="step"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><div class="body"><div class="t">Ativação</div><div class="d">Meta · Google · GA4 recebem o dado</div></div><div class="meter"><div class="pct">58%</div><div class="track"><div class="fill" style="--w:58%"></div></div></div></div>
+      <div class="flow-dot"></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="shead reveal"><div class="eyebrow">A infraestrutura</div><h2>Três movimentos que fecham o vazamento</h2><p>O foco não é instalar tags. É fazer o dado certo chegar onde ele vira decisão de mídia.</p></div>
+    <div class="moves reveal">
+      <div class="move c1"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div class="num">movimento 01</div><h3>Captura</h3><p>Capturar os sinais relevantes da jornada, inclusive antes da compra, quando a operação permite.</p></div>
+      <div class="move c2"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><div class="num">movimento 02</div><h3>Persistência</h3><p>Preservar e relacionar os sinais para reduzir a perda de informação pelo caminho.</p></div>
+      <div class="move c3"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><div class="num">movimento 03</div><h3>Ativação</h3><p>Enviar dados de qualidade para Meta, Google Ads, GA4 e demais plataformas compatíveis.</p></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="shead reveal"><div class="eyebrow">Implementação</div><h2>O que será entregue</h2><p>Tudo organizado dentro dos três pilares. Cada item tem função na jornada do dado.</p></div>
+    <div class="deliver reveal">
+      <div class="dcol c1"><div class="dtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>CAPTURA</div><div class="dlist"><span>Diagnóstico da infraestrutura atual</span><span>Mapa da infraestrutura de dados</span><span>Eventos do e-commerce</span><span>Captura antecipada via popup*</span></div></div>
+      <div class="dcol c2"><div class="dtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>PERSISTÊNCIA</div><div class="dlist"><span>Persistência dos dados</span><span>Continuidade dos sinais na jornada</span><span>Relacionamento das informações capturadas</span></div></div>
+      <div class="dcol c3"><div class="dtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>ATIVAÇÃO</div><div class="dlist"><span>Google Tag Manager</span><span>Meta Conversion API</span><span>Google Ads Conversion Tracking</span><span>Google Analytics 4</span><span>Mensuração e atribuição</span><span>Testes e validação</span></div></div>
+    </div>
+    <p class="foot-note">* Quando aplicável à operação, respeitando consentimento e privacidade.</p>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="shead reveal"><div class="eyebrow">Entrega + bônus</div><h2>Implementar é só parte do trabalho</h2><p>A estrutura também precisa ser validada funcionando na operação.</p></div>
+    <div class="split reveal">
+      <div class="half final"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Entrega final</h3><ul><li>Documentação da infraestrutura</li><li>Reunião final de entrega</li><li>Visão clara do que foi implementado</li><li>Pontos que cliente e gestor devem acompanhar</li></ul></div>
+      <div class="half bonus"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Bônus · monitoramento pós-implementação</h3><ul><li>Acompanhamento dos principais eventos</li><li>Validação da estabilidade</li><li>Identificação de eventuais ajustes</li></ul></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="shead reveal"><div class="eyebrow">Investimento</div><h2>Diagnóstico + implementação completa</h2></div>
+    <div class="invest reveal">
+      <div class="price"><div class="eyebrow">Investimento</div><div class="amt">R$ 3.000<small>,00</small></div><div class="terms"><div><b>Implantação</b> em até 20 dias úteis</div><div><b>Cartão de crédito</b> em até 12x</div></div></div>
+      <div class="incl"><h3>O QUE ESTÁ INCLUÍDO</h3><ul><li>Método CPA completo</li><li>Diagnóstico + <b>mapa da infraestrutura</b></li><li>Implementação técnica</li><li>Mensuração e atribuição</li><li>Testes, documentação e reunião final</li><li>Bônus: <b>monitoramento pós-implementação</b></li></ul></div>
+    </div>
+  </div>
+</section>
+<section class="close"><div class="wrap reveal"><h2>Não é capturar mais dado. É evitar que o dado valioso se perca no caminho.</h2><a href="#" class="cta">Faz sentido avançarmos?</a></div></section>
+</main>
+<footer>ARTUR BECKER · INFRAESTRUTURA DE DADOS PARA E-COMMERCE</footer>
+<script>
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const io=new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const el=e.target; el.classList.add('in');
+    el.querySelectorAll('.bar-fill,.step .meter .fill').forEach(f=>{f.style.width=f.style.getPropertyValue('--w')});
+    el.querySelectorAll('[data-count]').forEach(c=>animateCount(c));
+    if(el.id==='funnel')el.classList.add('on');
+    io.unobserve(el);
+  });
+},{threshold:.25});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+function animateCount(node){
+  const target=parseFloat(node.dataset.count);
+  const pre=node.dataset.prefix||'', suf=node.dataset.suffix||'';
+  if(reduce){node.textContent=pre+target+suf;return;}
+  const dur=1300, t0=performance.now();
+  function tick(now){
+    const p=Math.min((now-t0)/dur,1);
+    const eased=1-Math.pow(1-p,3);
+    node.textContent=pre+Math.round(target*eased)+suf;
+    if(p<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>
